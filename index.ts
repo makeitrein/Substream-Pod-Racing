@@ -52,11 +52,6 @@ const pinaxPod = async (): Promise<PodFirehose> => {
   return { token, baseUrl, name: "Pinax" };
 };
 
-const podFirehoses = async (): Promise<PodFirehose[]> => [
-  await sfPod(),
-  await pinaxPod(),
-];
-
 const podPackages: PodPackage[] = [
   {
     name: "Chainlink Price Substream",
@@ -84,8 +79,7 @@ const podRace = async (podPackage: PodPackage, podFirehose: PodFirehose) => {
 
     const startBlock = -1000;
 
-    const raceName = `${firehoseName} ➡️ ${outputModule} + ${name}`;
-    console.time(raceName);
+    const startTime = Date.now();
 
     const { emitter } = await substreamEmitter({
       substreamPackage,
@@ -96,7 +90,11 @@ const podRace = async (podPackage: PodPackage, podFirehose: PodFirehose) => {
     });
 
     const blockHandler = (block: BlockScopedData) => {
-      console.timeEnd(raceName);
+      const endTime = Date.now();
+      const duration = endTime - startTime;
+      const raceName = `🚀${firehoseName} ➡️ ${outputModule} + ${name}`;
+
+      console.log(raceName + " " + duration + "ms");
       emitter.off("block", blockHandler);
     };
 
@@ -108,13 +106,15 @@ const podRace = async (podPackage: PodPackage, podFirehose: PodFirehose) => {
   }
 };
 
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
 const main = async () => {
-  const firehoses = await podFirehoses();
+  const firehoses = [await pinaxPod(), await sfPod()];
 
   for (const firehose of firehoses) {
     for (const pkg of podPackages) {
       await podRace(pkg, firehose);
-      console.log("\n");
+      await sleep(1000);
     }
   }
 };
