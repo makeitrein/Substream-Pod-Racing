@@ -2,8 +2,12 @@ import { authIssue } from "@substreams/core";
 import { BlockScopedData, Package } from "@substreams/core/proto";
 import { readPackageFromFile } from "@substreams/manifest";
 import "dotenv/config";
+import fetch from "node-fetch";
 import { ChainName, pinaxChainToFirehose, sfChainToFirehose } from "./chains";
 import { substreamEmitter } from "./emitter";
+
+// @ts-ignore
+globalThis.fetch = fetch;
 
 export function invariant(condition: any, message?: string): asserts condition {
   if (!condition) {
@@ -80,7 +84,7 @@ const podRace = async (podPackage: PodPackage, podFirehose: PodFirehose) => {
 
     const startBlock = -1000;
 
-    const raceName = `Starting Pod Race: ${outputModule} + ${name} for ${firehoseName}`;
+    const raceName = `${firehoseName} ➡️ ${outputModule} + ${name}`;
     console.time(raceName);
 
     const { emitter } = await substreamEmitter({
@@ -110,6 +114,7 @@ const main = async () => {
   for (const firehose of firehoses) {
     for (const pkg of podPackages) {
       await podRace(pkg, firehose);
+      console.log("\n");
     }
   }
 };
